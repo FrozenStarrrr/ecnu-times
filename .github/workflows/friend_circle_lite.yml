@@ -74,6 +74,8 @@ jobs:
         mkdir pages
         cp -r main ./static/index.html ./static/readme.md ./static/favicon.ico ./static/bg-light.webp ./temp/cache.json ./static/bg-dark.webp all.json errors.json pages/
         cd pages
+        touch CNAME
+        echo "times.myecnu.org" >> CNAME
         git init
         git add .
         git commit -m "⏱️ $(date +"%Y年%m月%d日-%H时%M分") GitHub Actions定时更新"
