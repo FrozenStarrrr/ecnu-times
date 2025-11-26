@@ -17,10 +17,6 @@ function initialize_fc_lite() {
   // 清除之前的内容
   root.innerHTML = "";
 
-  const randomArticleContainer = document.createElement("div");
-  randomArticleContainer.id = "random-article";
-  root.appendChild(randomArticleContainer);
-
   const container = document.createElement("div");
   container.className = "articles-container";
   container.id = "articles-container";
@@ -40,7 +36,7 @@ function initialize_fc_lite() {
   authorFilter.innerHTML = '<option value="">全部学院</option>';
   filterContainer.appendChild(authorFilter);
   root.insertBefore(filterContainer, container);
-  
+
   // 创建统计信息容器
   const statsContainer = document.createElement("div");
   statsContainer.id = "stats-container";
@@ -50,40 +46,40 @@ function initialize_fc_lite() {
   let allArticles = []; // 存储所有文章
 
   function loadMoreArticles() {
-    // const cacheKey = "friend-circle-lite-cache";
-    // const cacheTimeKey = "friend-circle-lite-cache-time";
-    // const cacheTime = localStorage.getItem(cacheTimeKey);
-    // const now = new Date().getTime();
+    const cacheKey = "friend-circle-lite-cache";
+    const cacheTimeKey = "friend-circle-lite-cache-time";
+    const cacheTime = localStorage.getItem(cacheTimeKey);
+    const now = new Date().getTime();
 
-    // if (cacheTime && now - cacheTime < 10 * 60 * 1000) {
-    //   // 缓存时间小于10分钟
-    //   const cachedData = JSON.parse(localStorage.getItem(cacheKey));
-    //   if (cachedData) {
-    //     processArticles(cachedData);
-    //     return;
-    //   }
-    // }
-
-    // fetch(`${UserConfig.private_api_url}all.json`)
-    //   .then((response) => response.json())
-    //   .then((data) => {
-    //     localStorage.setItem(cacheKey, JSON.stringify(data));
-    //     localStorage.setItem(cacheTimeKey, now.toString());
-    //     processArticles(data);
-    //   })
-    //   .finally(() => {
-    //     loadMoreBtn.innerText = "再来亿点"; // 恢复按钮文本
-    //   });
-
-    const nextArticles = currentFilteredArticles.slice(
-      start,
-      start + UserConfig.page_turning_number
-    );
-    renderArticles([...container.children].map((n) => n).concat(nextArticles));
-    start += UserConfig.page_turning_number;
-    if (start >= currentFilteredArticles.length) {
-      loadMoreBtn.style.display = "none";
+    if (cacheTime && now - cacheTime < 10 * 60 * 1000) {
+      // 缓存时间小于10分钟
+      const cachedData = JSON.parse(localStorage.getItem(cacheKey));
+      if (cachedData) {
+        processArticles(cachedData);
+        return;
+      }
     }
+
+    fetch(`${UserConfig.private_api_url}all.json`)
+      .then((response) => response.json())
+      .then((data) => {
+        localStorage.setItem(cacheKey, JSON.stringify(data));
+        localStorage.setItem(cacheTimeKey, now.toString());
+        processArticles(data);
+      })
+      .finally(() => {
+        loadMoreBtn.innerText = "再来亿点"; // 恢复按钮文本
+      });
+
+    // const nextArticles = currentFilteredArticles.slice(
+    //   start,
+    //   start + UserConfig.page_turning_number
+    // );
+    // renderArticles([...container.children].map((n) => n).concat(nextArticles));
+    // start += UserConfig.page_turning_number;
+    // if (start >= currentFilteredArticles.length) {
+    //   loadMoreBtn.style.display = "none";
+    // }
   }
 
   function renderArticles(articleToRender) {
@@ -170,8 +166,6 @@ function initialize_fc_lite() {
             <div>更新时间:${stats.last_updated_time}</div>
         `;
 
-    displayRandomArticle(); // 显示随机友链卡片
-
     const initialArticles = allArticles.slice(
       start,
       start + UserConfig.page_turning_number
@@ -182,30 +176,6 @@ function initialize_fc_lite() {
     if (start >= allArticles.length) {
       loadMoreBtn.style.display = "none"; // 隐藏按钮
     }
-  }
-
-  // 显示随机文章的逻辑
-  function displayRandomArticle() {
-    const randomArticle =
-      allArticles[Math.floor(Math.random() * allArticles.length)];
-    randomArticleContainer.innerHTML = `
-            <div class="random-container">
-                <div class="random-container-title">随机钓鱼</div>
-                <div class="random-title">${randomArticle.title}</div>
-                <div class="random-author">作者: ${randomArticle.author}</div>
-            </div>
-            <div class="random-button-container">
-                <a href="#" id="refresh-random-article">刷新</a>
-                <button class="random-link-button" onclick="window.open('${randomArticle.link}', '_blank')">过去转转</button>
-            </div>
-        `;
-
-    // 为刷新按钮添加事件监听器
-    const refreshBtn = document.getElementById("refresh-random-article");
-    refreshBtn.addEventListener("click", function (event) {
-      event.preventDefault(); // 阻止默认的跳转行为
-      displayRandomArticle(); // 调用显示随机文章的逻辑
-    });
   }
 
   function showAuthorArticles(author, avatar, link) {
