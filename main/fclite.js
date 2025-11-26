@@ -31,8 +31,8 @@ function initialize_fc_lite() {
   root.appendChild(loadMoreBtn);
 
   //筛选控制
-  const filterController = document.createElement("div");
-  filterController.id = "filter-controller";
+  const filterContainer = document.createElement("div");
+  filterContainer.id = "filter-container";
 
   const authorFilter = document.createElement("select");
   authorFilter.id = "author-filter";
