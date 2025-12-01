@@ -28,7 +28,7 @@ function initialize_fc_lite() {
         align-items: center;
         padding: 8px 12px; 
         border: 1px solid #ccc; 
-        border-radius: 4px; 
+        border-radius: 10px; 
         background: #fff; 
         cursor: pointer; 
         min-width: 150px; 
@@ -51,7 +51,7 @@ function initialize_fc_lite() {
         z-index: 99999; 
         max-height: 300px; 
         overflow-y: auto; 
-        border-radius: 4px; 
+        border-radius: 10px; 
         padding: 5px 0; 
         border: 1px solid #eee;
       }
