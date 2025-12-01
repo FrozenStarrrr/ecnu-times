@@ -11,29 +11,53 @@ function initialize_fc_lite() {
   const root = document.getElementById("friend-circle-lite-root");
   if (!root) return;
 
-  // --- 1. Inject Styles for the Multi-select Dropdown ---
+  // --- 1. Inject Styles (Updated for Top Layer) ---
   const styleId = "fc-lite-multiselect-style";
   if (!document.getElementById(styleId)) {
     const style = document.createElement("style");
     style.id = styleId;
     style.textContent = `
-      .fcl-filter-wrapper { position: relative; display: inline-block; margin-bottom: 15px; font-family: sans-serif; }
+      .fcl-filter-wrapper { 
+        display: inline-block; 
+        margin-bottom: 15px; 
+        font-family: sans-serif; 
+      }
       .fcl-dropdown-btn { 
-        padding: 8px 12px; border: 1px solid #ccc; border-radius: 4px; background: #fff; cursor: pointer; min-width: 120px; text-align: left; display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 12px; 
+        border: 1px solid #ccc; 
+        border-radius: 4px; 
+        background: #fff; 
+        cursor: pointer; 
+        min-width: 120px; 
+        text-align: left; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center;
+        user-select: none;
       }
       .fcl-dropdown-content {
-        display: none; position: absolute; background-color: #f9f9f9; min-width: 200px; box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); z-index: 100; max-height: 300px; overflow-y: auto; border-radius: 4px; padding: 5px; border: 1px solid #eee;
+        display: none; 
+        /* Key Change: Fixed positioning to escape container overflow */
+        position: fixed; 
+        background-color: #f9f9f9; 
+        min-width: 200px; 
+        box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2); 
+        /* Key Change: Very high Z-Index to stay on top */
+        z-index: 99999; 
+        max-height: 300px; 
+        overflow-y: auto; 
+        border-radius: 4px; 
+        padding: 5px; 
+        border: 1px solid #eee;
       }
       .fcl-dropdown-content.show { display: block; }
-      .fcl-checkbox-item { display: block; padding: 5px 10px; cursor: pointer; user-select: none; }
+      .fcl-checkbox-item { display: block; padding: 5px 10px; cursor: pointer; user-select: none; color: #333; font-size: 14px;}
       .fcl-checkbox-item:hover { background-color: #f1f1f1; }
       .fcl-checkbox-item input { margin-right: 8px; }
-      /* Arrow indicator */
       .fcl-arrow { font-size: 10px; margin-left: 10px; }
     `;
     document.head.appendChild(style);
   }
-  // ----------------------------------------------------
 
   // Clear previous content
   root.innerHTML = "";
@@ -41,7 +65,7 @@ function initialize_fc_lite() {
   // Create Filter Container
   const filterContainer = document.createElement("div");
   filterContainer.id = "filter-container";
-  filterContainer.className = "fcl-filter-wrapper"; // Use new class
+  filterContainer.className = "fcl-filter-wrapper";
 
   // Create Custom Dropdown UI
   const dropdownBtn = document.createElement("div");
@@ -52,22 +76,52 @@ function initialize_fc_lite() {
   dropdownContent.className = "fcl-dropdown-content";
   dropdownContent.id = "fcl-dropdown-list";
 
+  // Note: We append dropdownContent to body or root, but here we keep it in flow
+  // The CSS 'position: fixed' handles the visual breakout.
   filterContainer.appendChild(dropdownBtn);
   filterContainer.appendChild(dropdownContent);
   root.appendChild(filterContainer);
 
-  // Toggle Dropdown Visibility
+  // --- Toggle Dropdown Logic (Updated for Positioning) ---
   dropdownBtn.onclick = (e) => {
     e.stopPropagation();
-    dropdownContent.classList.toggle("show");
+
+    // Check if it is currently visible before toggling
+    const isVisible = dropdownContent.classList.contains("show");
+
+    // Close all other instances if any exist (optional safety)
+    document
+      .querySelectorAll(".fcl-dropdown-content")
+      .forEach((el) => el.classList.remove("show"));
+
+    if (!isVisible) {
+      // Calculate position dynamically
+      const rect = dropdownBtn.getBoundingClientRect();
+
+      dropdownContent.style.top = rect.bottom + 5 + "px"; // 5px gap
+      dropdownContent.style.left = rect.left + "px";
+      // Optional: Match width to button if button is wide, or keep min-width
+      // dropdownContent.style.width = rect.width + "px";
+
+      dropdownContent.classList.add("show");
+    }
   };
 
-  // Close dropdown when clicking outside
-  window.addEventListener("click", (e) => {
-    if (!filterContainer.contains(e.target)) {
-      dropdownContent.classList.remove("show");
+  // Close dropdown when clicking outside OR scrolling
+  const closeDropdown = (e) => {
+    // If click is inside the dropdown or button, do nothing
+    if (
+      e.type === "click" &&
+      (filterContainer.contains(e.target) || dropdownContent.contains(e.target))
+    ) {
+      return;
     }
-  });
+    dropdownContent.classList.remove("show");
+  };
+
+  window.addEventListener("click", closeDropdown);
+  window.addEventListener("scroll", closeDropdown, true); // Capture phase to catch all scrolls
+  window.addEventListener("resize", closeDropdown);
 
   const container = document.createElement("div");
   container.className = "articles-container";
@@ -86,7 +140,7 @@ function initialize_fc_lite() {
   let start = 0;
   let allArticles = [];
   let currentFilteredArticles = [];
-  let selectedAuthors = new Set(); // Stores selected authors
+  let selectedAuthors = new Set();
 
   function loadInitialData() {
     const cacheKey = "friend-circle-lite-cache";
@@ -180,11 +234,9 @@ function initialize_fc_lite() {
     });
   }
 
-  // --- 2. Update Apply Filters for Multi-select ---
   function applyFilters() {
     let filtered = allArticles;
 
-    // If the Set has items, filter by them. If empty, show all.
     if (selectedAuthors.size > 0) {
       filtered = filtered.filter((a) => selectedAuthors.has(a.author));
       dropdownBtn.querySelector(
@@ -206,9 +258,8 @@ function initialize_fc_lite() {
   function processArticles(data) {
     allArticles = data.article_data;
 
-    // --- 3. Build Checkbox List ---
     const uniqueAuthors = [...new Set(allArticles.map((data) => data.author))];
-    dropdownContent.innerHTML = ""; // Clear existing
+    dropdownContent.innerHTML = "";
 
     uniqueAuthors.forEach((author) => {
       const label = document.createElement("label");
@@ -217,6 +268,9 @@ function initialize_fc_lite() {
       const checkbox = document.createElement("input");
       checkbox.type = "checkbox";
       checkbox.value = author;
+
+      // Stop propagation so clicking a checkbox doesn't trigger the window-click-close event
+      checkbox.addEventListener("click", (e) => e.stopPropagation());
 
       checkbox.addEventListener("change", (e) => {
         if (e.target.checked) {
@@ -229,12 +283,15 @@ function initialize_fc_lite() {
 
       label.appendChild(checkbox);
       label.appendChild(document.createTextNode(" " + author));
+
+      // Stop propagation on label click too
+      label.addEventListener("click", (e) => e.stopPropagation());
+
       dropdownContent.appendChild(label);
     });
 
     currentFilteredArticles = [...allArticles];
 
-    // Stats
     const stats = data.statistical_data;
     statsContainer.innerHTML = `
             <div>Powered by: <a href="https://github.com/willow-god/Friend-Circle-Lite" target="_blank">FriendCircleLite</a><br></div>
